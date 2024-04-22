@@ -3,9 +3,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './users/users.module';
-import { RolesModule } from './roles/roles.module';
-import { PermissionsModule } from './permissions/permissions.module';
-import { AuthModule } from './auth/auth.module';
+import { DataModule } from './data/data.module';
 
 @Module({
   imports: [
@@ -15,14 +13,12 @@ import { AuthModule } from './auth/auth.module';
       port: 3306,
       username: 'root',
       password: '123',
-      database: 'athenea_montagas',
+      database: 'fenix3',
       entities: [__dirname + '/**/*.entity{.ts,.js}'], // Ruta a las entidades
-      synchronize: true,
+      //synchronize: true,
     }),
     UsersModule,
-    RolesModule,
-    PermissionsModule,
-    AuthModule
+    DataModule,
   ],
   controllers: [AppController],
   providers: [AppService],
