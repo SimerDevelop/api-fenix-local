@@ -13,6 +13,33 @@ export class UsersService {
     @InjectRepository(User) private usuariosRepository: Repository<User>,
   ){ }
 
+  async findOne(id: string): Promise<any> {
+    try {
+      const user = await this.usuariosRepository
+        .createQueryBuilder('users')
+        .where('users.id = :id', { id })
+        .getOne();
+
+      if (user) {
+        return ResponseUtil.success(
+          200,
+          'Usuario encontrado',
+          user
+        );
+      } else {
+        return ResponseUtil.error(
+          404,
+          'Usuario no encontrado'
+        );
+      }
+    } catch (error) {
+      return ResponseUtil.error(
+        500,
+        'Error al obtener el usuario'
+      );
+    }
+  }
+
   //////////////////////////////////////////////////////////////////////////////////
 
   async findAll(): Promise<any> {
@@ -72,7 +99,7 @@ export class UsersService {
         }
   
         // Generar un token de acceso
-        const accessToken = jwt.sign({ userId: user.id, key: 'poseidon-gasco.9010' }, 'poseidon', { expiresIn: '1h' });
+        const accessToken = jwt.sign({ userId: user.id, key: 'fenix-montagas.9010' }, 'fenix', { expiresIn: '1h' });
   
         return ResponseUtil.success(
           200,
