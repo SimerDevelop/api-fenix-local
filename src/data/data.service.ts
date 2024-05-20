@@ -51,9 +51,8 @@ export class DataService {
       const startDateTime = billData.start + 'T' + billData.time_start + '.00Z';
       const endDateTime = billData.end + 'T' + billData.time_end + '.00Z';
 
-      console.log('startDateTime', startDateTime);
-      console.log('endDateTime', endDateTime);
-
+      console.log('solicitud entrante startDateTime', startDateTime + ' ' + endDateTime);
+      
       const serverTime = moment().format();
       console.log('Server time:', serverTime);
 
@@ -66,6 +65,35 @@ export class DataService {
         // .skip(skip)
         // .take(billData.limit)
         .getMany();
+
+      data.forEach(item => {
+        if (item.masa_aplicada < 0) {
+          item.masa_aplicada = 0;
+        }
+
+        switch (item.estado) {
+          case 'O2':
+            item.estado = 'Éxito';
+            break;
+          case 'O3':
+            item.estado = 'Fracaso';
+            break;
+          case 'O4':
+            item.estado = 'Fuera de rango';
+            break;
+          case 'O5':
+            item.estado = 'Capacidad no existe';
+            break;
+          case 'O6':
+            item.estado = 'Cilindro presurizado';
+            break;
+          case 'O7':
+            item.estado = 'Mantenimiento';
+            break;
+        }
+      });
+
+      const totalMasaAplicada = parseFloat((data.reduce((sum, item) => sum + item.masa_aplicada, 0)).toFixed(2));
 
       const formattedData = data.map(item => ({
         ...item,
@@ -103,7 +131,7 @@ export class DataService {
         'Tara',
         'Peso_inicial',
         'Peso_final',
-        'Masa_aplicada',
+        'Masa_aplicada' + ' (Total: ' + totalMasaAplicada + ')',
         'Estado',
         'Sucursal',
       ];
@@ -112,9 +140,8 @@ export class DataService {
         return ResponseUtil.error(400, 'No hay datos para generar el csv')
       }
 
-      console.log('records', records);
-
-      return ResponseUtil.success(200, 'Datos csv generados correctamente', { headers, records })
+      console.log('Datos descargados correctamente' + ' ' + records.length + ' ' + 'registros');
+      return ResponseUtil.success(200, 'Datos csv generados correctamente', { headers, records, totalMasaAplicada })
 
     } catch (error) {
       console.error(error);
