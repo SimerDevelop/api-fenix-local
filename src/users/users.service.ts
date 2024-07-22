@@ -11,7 +11,57 @@ export class UsersService {
 
   constructor(
     @InjectRepository(User) private usuariosRepository: Repository<User>,
-  ){ }
+  ) { }
+
+  async createUser(userData: User): Promise<any> {
+    try {
+      if (userData) {
+        console.log(userData);
+        // Verificar si ya existe un usuario con el numero de identificación
+        const existingUser = await this.usuariosRepository
+          .createQueryBuilder('users')
+          .where('users.identificacion = :identificacion', { identificacion: userData.identificacion })
+          .getOne();
+
+        if (existingUser) {
+          return ResponseUtil.error(400, 'El numero de identificación ya esta registrado');
+        }
+
+        const hashedPassword = await bcrypt.hash(userData.password, 1);
+
+        const newUser = this.usuariosRepository.create({
+          ...userData,
+          password: hashedPassword,
+          id_estado: 1,
+          flag: "N",
+        });
+
+        const createdUser = await this.usuariosRepository.save(newUser);
+
+        if (createdUser) {
+          return ResponseUtil.success(
+            200,
+            'Usuario creado exitosamente',
+            createdUser
+          );
+        } else {
+          return ResponseUtil.error(
+            500,
+            'Ha ocurrido un problema al crear el usuario'
+          );
+        }
+      }
+    } catch (error) {
+      console.log(error);
+      return ResponseUtil.error(
+        500,
+        'Error al crear el usuario',
+        error.message
+        );
+
+      
+    }
+  }
 
   async findOne(id: string): Promise<any> {
     try {
@@ -69,51 +119,45 @@ export class UsersService {
     }
   }
 
-    /**
-   * Inicia sesión de un usuario en la base de datos.
-   * @param credentials - Correo electrónico del usuario.
-   * @param password - Contraseña del usuario.
-   * @returns Información sobre el resultado de la operación.
-   */
-    async loginUser(credentials: string, password: string): Promise<any> {
-      try {
-        const user = await this.usuariosRepository
-          .createQueryBuilder('users')
-          .where('users.usuario = :credentials', { credentials })
-          .getOne();
-  
-        if (!user) {
-          return ResponseUtil.error(
-            404,
-            'Usuario no encontrado'
-          );
-        }
-  
-        const isPasswordValid = await bcrypt.compare(password, user.password);
-  
-        if (!isPasswordValid) {
-          return ResponseUtil.error(
-            401,
-            'Contraseña incorrecta'
-          );
-        }
-  
-        // Generar un token de acceso
-        const accessToken = jwt.sign({ userId: user.id, key: 'fenix-montagas.9010' }, 'fenix', { expiresIn: '1h' });
-  
-        return ResponseUtil.success(
-          200,
-          'Inicio de sesión exitoso',
-          { user, accessToken } // Incluye el token en la respuesta
-        );
-  
-      } catch (error) {
-        console.log(error);
-        
+  async loginUser(credentials: string, password: string): Promise<any> {
+    try {
+      const user = await this.usuariosRepository
+        .createQueryBuilder('users')
+        .where('users.usuario = :credentials', { credentials })
+        .getOne();
+
+      if (!user) {
         return ResponseUtil.error(
-          500,
-          'Error al iniciar sesión',
+          404,
+          'Usuario no encontrado'
         );
       }
+
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+
+      if (!isPasswordValid) {
+        return ResponseUtil.error(
+          401,
+          'Contraseña incorrecta'
+        );
+      }
+
+      // Generar un token de acceso
+      const accessToken = jwt.sign({ userId: user.id, key: 'fenix-montagas.9010' }, 'fenix', { expiresIn: '1h' });
+
+      return ResponseUtil.success(
+        200,
+        'Inicio de sesión exitoso',
+        { user, accessToken } // Incluye el token en la respuesta
+      );
+
+    } catch (error) {
+      console.log(error);
+
+      return ResponseUtil.error(
+        500,
+        'Error al iniciar sesión',
+      );
     }
+  }
 }
