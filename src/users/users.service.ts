@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { ResponseUtil } from 'src/utils/response.util';
 import { User } from './entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -86,6 +86,43 @@ export class UsersService {
       return ResponseUtil.error(
         500,
         'Error al obtener el usuario'
+      );
+    }
+  }
+
+  async update(id, userData) {
+    try {
+      const existingUser = await this.usuariosRepository.findOne({
+        where: { id },
+      });
+
+      if (!existingUser) {
+        return ResponseUtil.error(
+          400,
+          'Usuario no encontrado'
+        );
+      }
+
+      const updatedUser = await this.usuariosRepository.save({
+        ...existingUser,
+        ...userData,
+      });
+
+      return ResponseUtil.success(
+        200,
+        'Usuario actualizado exitosamente',
+        updatedUser
+      );
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        return ResponseUtil.error(
+          404,
+          'Usuario no encontrado'
+        );
+      }
+      return ResponseUtil.error(
+        500,
+        'Error al actualizar el Usuario'
       );
     }
   }
